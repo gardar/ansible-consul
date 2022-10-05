@@ -1,6 +1,4 @@
 ---
-## File: services.yml - services configuration
-
 - name: Configure consul services
   template:
     dest: "{{ consul_configd_path }}/service_{{ service_item.name }}.json"
@@ -40,14 +38,14 @@
 
 - name: Set fact with list of existing configuration files
   set_fact:
-    list_current_service_config: "{{ list_current_service_config |default([]) + [ config_file_item.path ] }}"
+    list_current_service_config: "{{ list_current_service_config | default([]) + [config_file_item.path] }}"
   with_items: "{{ services_enabled_files }}"
   loop_control:
     loop_var: config_file_item
 
 - name: Set fact with list of services we manage
   set_fact:
-    managed_files: "{{ managed_files |default([]) }} + \
+    managed_files: "{{ managed_files | default([]) }} + \
     [ '{{ consul_configd_path }}/service_{{ service_item.name }}.json' ]"
   with_items: "{{ consul_services }}"
   loop_control:

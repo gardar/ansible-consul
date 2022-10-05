@@ -31,6 +31,7 @@
   get_url:
     url: "{{ consul_checksum_file_url }}"
     dest: "{{ role_path }}/files/consul_{{ consul_version }}_SHA256SUMS"
+    mode: '0644'
   become: false
   vars:
     ansible_become: false
@@ -68,6 +69,7 @@
     dest: "{{ role_path }}/files/{{ consul_pkg }}"
     checksum: "sha256:{{ consul_sha256.stdout }}"
     timeout: "42"
+    mode: '0644'
   become: false
   vars:
     ansible_become: false

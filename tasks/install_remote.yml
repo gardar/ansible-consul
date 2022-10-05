@@ -25,6 +25,7 @@
     url: "{{ consul_checksum_file_url }}"
     dest: "/tmp/consul/consul_{{ consul_version }}_SHA256SUMS"
     validate_certs: false
+    mode: '0644'
   tags: installation
   when: not consul_checksum.stat.exists | bool
 
@@ -46,12 +47,13 @@
   get_url:
     url: "{{ consul_zip_url }}"
     dest: "/tmp/consul/{{ consul_pkg }}"
-    checksum: "sha256:{{ consul_sha256.stdout.split(' ')|first }}"
+    checksum: "sha256:{{ consul_sha256.stdout.split(' ') | first }}"
     timeout: 42
+    mode: '0644'
   register: consul_download
   tags: installation
 
-- name: Unarchive Consul and install binary
+- name: Unarchive Consul and install binary  # noqa no-handler
   unarchive:
     remote_src: true
     src: "/tmp/consul/{{ consul_pkg }}"

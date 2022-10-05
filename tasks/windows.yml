@@ -9,7 +9,6 @@
   with_items: "{{ consul_servers | difference(play_hosts) }}"
   loop_control:
     loop_var: host_item
-  ignore_errors: true
   when: consul_gather_server_facts | bool
 
 - name: (Windows) Expose bind_address, datacenter and node_role as facts
@@ -38,8 +37,18 @@
   when:
     - not consul_binary_installed.stat.exists | bool
 
-- block:
-    - block:
+- name: Consul encryption
+  no_log: true
+  when:
+    - (consul_encrypt_enable)
+  block:
+    - name: Encryption key from bootstrapped server
+      no_log: true
+      when:
+        - consul_raw_key is not defined
+        - bootstrap_state.stat.exists | bool
+        - inventory_hostname in consul_servers
+      block:
         - name: (Windows) Check for gossip encryption key on previously boostrapped server
           slurp:
             src: "{{ consul_config_path }}/config.json"
@@ -55,12 +64,6 @@
           set_fact:
             consul_raw_key: "{{ consul_config.encrypt }}"
           when: consul_config is defined
-
-      no_log: true
-      when:
-        - consul_raw_key is not defined
-        - bootstrap_state.stat.exists | bool
-        - inventory_hostname in consul_servers
 
     # Key provided by extra vars or the above block
     - name: (Windows) Write gossip encryption key locally for use with new servers
@@ -78,7 +81,13 @@
       when: consul_raw_key is defined
 
     # Generate new key if non was found
-    - block:
+    - name: Generate new key
+      no_log: true
+      run_once: true
+      when:
+        - not consul_local_key.changed
+        - not bootstrap_state.stat.exists | bool
+      block:
 
         - name: (Windows) Generate gossip encryption key
           win_shell: "{{ consul_binary }} keygen"
@@ -93,12 +102,6 @@
           vars:
             ansible_become: false
           delegate_to: localhost
-
-      no_log: true
-      run_once: true
-      when:
-        - not consul_local_key.changed
-        - not bootstrap_state.stat.exists | bool
 
     - name: (Windows) Read gossip encryption key for servers that require it
       set_fact:
@@ -116,9 +119,6 @@
         ansible_become: false
       run_once: true
       delegate_to: localhost
-  no_log: true
-  when:
-    - consul_encrypt_enable
 
 - name: (Windows) Create Consul configuration
   import_tasks: config_windows.yml
@@ -135,9 +135,13 @@
 
 - name: (Windows) Create TLS configuration
   include_tasks: tls.yml
-  when: consul_tls_enable | bool
+  when:
+    - (consul_tls_enable)
+    - (consul_tls_copy_keys)
 
-- block:
+- name: Bootstrap
+  when: not bootstrap_state.stat.exists
+  block:
     - name: Convert consul_binary from Unix -> Windows
       win_stat:
         path: "{{ consul_binary }}"
@@ -173,12 +177,3 @@
       win_file:
         dest: "{{ consul_bootstrap_state }}"
         state: touch
-      when: ansible_os_family == "Windows"
-
-    - include_tasks: ../tasks/iptables.yml
-      when: consul_iptables_enable | bool
-
-  when: not bootstrap_state.stat.exists
-
-- include_tasks: ../tasks/dnsmasq.yml
-  when: consul_dnsmasq_enable | bool

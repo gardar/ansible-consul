@@ -9,9 +9,8 @@
   with_items: "{{ consul_servers | difference(play_hosts) }}"
   loop_control:
     loop_var: host_item
-  ignore_errors: true
   run_once: true
-  when: consul_gather_server_facts | bool
+  when: (consul_gather_server_facts)
 
 - name: Expose advertise_address(_wan) datacenter and node_role as facts
   set_fact:
@@ -25,7 +24,7 @@
   stat:
     path: "{{ consul_bootstrap_state }}"
   register: bootstrap_state
-  ignore_errors: true
+  failed_when: false
   tags: always
 
 - name: Include user and group settings
@@ -34,7 +33,7 @@
 - name: Install OS packages and consul - from the repository
   include_tasks: install_linux_repo.yml
   when:
-    - consul_install_from_repo | bool
+    - (consul_install_from_repo)
 
 - name: Include directory settings
   import_tasks: dirs.yml
@@ -51,21 +50,31 @@
 - name: Install OS packages and consul - locally
   include_tasks: install.yml
   when:
-    - consul_install_binary | bool
-    - not consul_install_remotely | bool
-    - not consul_install_from_repo | bool
+    - (consul_install_binary)
+    - not (consul_install_remotely)
+    - not (consul_install_from_repo)
 
 - name: Install OS packages and consul - remotely
   include_tasks: install_remote.yml
   when:
-    - consul_install_binary | bool
-    - consul_install_remotely | bool
-    - not consul_install_from_repo | bool
+    - (consul_install_binary)
+    - (consul_install_remotely)
+    - not (consul_install_from_repo)
 
 # XXX: Individual gossip tasks are deprecated and need to be removed
 # - include_tasks: ../tasks/encrypt_gossip.yml
-- block:
-    - block:
+- name: Consul encryption
+  no_log: true
+  when:
+    - (consul_encrypt_enable)
+  block:
+    - name: Encryption key from bootstrapped server
+      no_log: true
+      when:
+        - consul_raw_key is not defined
+        - bootstrap_state.stat.exists | bool
+        - inventory_hostname in consul_servers
+      block:
         - name: Check for gossip encryption key on previously boostrapped server
           slurp:
             src: "{{ consul_config_path }}/config.json"
@@ -82,12 +91,6 @@
             consul_raw_key: "{{ consul_config.encrypt }}"
           when: consul_config is defined
 
-      no_log: true
-      when:
-        - consul_raw_key is not defined
-        - bootstrap_state.stat.exists | bool
-        - inventory_hostname in consul_servers
-
     # Key provided by extra vars or the above block
     - name: Write gossip encryption key locally for use with new servers
       template:
@@ -103,26 +106,28 @@
       when: consul_raw_key is defined
 
     # Generate new key if none was found
-    - block:
-        - name: Generate gossip encryption key
-          shell: "PATH={{ consul_bin_path }}:$PATH consul keygen"
-          register: consul_keygen
-
-        - name: Write key locally to share with other nodes
-          template:
-            content: "{{ consul_keygen.stdout }}"
-            dest: '/tmp/consul_raw.key'
-          become: false
-          vars:
-            ansible_become: false
-          delegate_to: localhost
-
+    - name: Generate new key
       no_log: true
       run_once: true
       when:
         # if files '/tmp/consul_raw.key' exist
         - lookup('first_found', dict(files=['/tmp/consul_raw.key'], skip=true)) | ternary(false, true)
         - not bootstrap_state.stat.exists | bool
+      block:
+        - name: Generate gossip encryption key
+          shell: "PATH={{ consul_bin_path }}:$PATH consul keygen"
+          register: consul_keygen
+          changed_when: true
+
+        - name: Write key locally to share with other nodes
+          template:
+            content: "{{ consul_keygen.stdout }}"
+            dest: '/tmp/consul_raw.key'
+            mode: '0644'
+          become: false
+          vars:
+            ansible_become: false
+          delegate_to: localhost
 
     - name: Read gossip encryption key for servers that require it
       set_fact:
@@ -141,20 +146,19 @@
       run_once: true
       delegate_to: localhost
       changed_when: false
-  no_log: true
-  when:
-    - consul_encrypt_enable | bool
 
 - name: Create ACL configuration
   include_tasks: acl.yml
-  when: consul_acl_enable | bool
+  when: (consul_acl_enable)
 
 - name: Create Consul configuration
   import_tasks: config.yml
 
 - name: Create TLS configuration
   include_tasks: tls.yml
-  when: consul_tls_enable | bool
+  when:
+    - (consul_tls_enable)
+    - (consul_tls_copy_keys)
 
 - name: Create syslog configuration
   import_tasks: syslog.yml
@@ -177,10 +181,7 @@
     mode: 0755
   when:
     - not ansible_service_mgr == "systemd"
-    - not ansible_os_family == "Debian"
-    - not ansible_os_family == "FreeBSD"
-    - not ansible_os_family == "Solaris"
-    - not ansible_os_family == "Darwin"
+    - ansible_os_family not in ['Debian', 'FreeBSD', 'Solaris', 'Darwin']
 
 - name: Create Debian init script
   template:
@@ -192,9 +193,7 @@
   when:
     - not ansible_service_mgr == "systemd"
     - ansible_os_family == "Debian"
-    - not ansible_os_family == "FreeBSD"
-    - not ansible_os_family == "Solaris"
-    - not ansible_os_family == "Darwin"
+    - ansible_os_family not in ['FreeBSD', 'Solaris', 'Darwin']
 
 - name: Create systemd script
   template:
@@ -207,12 +206,10 @@
   notify: restart consul
   when:
     - ansible_service_mgr == "systemd"
-    - not ansible_os_family == "FreeBSD"
-    - not ansible_os_family == "Solaris"
-    - not ansible_os_family == "Darwin"
-    - not consul_install_from_repo | bool
+    - ansible_os_family not in ['FreeBSD', 'Solaris', 'Darwin']
+    - not (consul_install_from_repo)
 
-- name: Reload systemd
+- name: Reload systemd  # noqa no-handler
   systemd:
     daemon_reload: true
   when: systemd_unit is changed
@@ -223,9 +220,7 @@
     enabled: yes
   when:
     - ansible_service_mgr == "systemd"
-    - not ansible_os_family == "FreeBSD"
-    - not ansible_os_family == "Solaris"
-    - not ansible_os_family == "Darwin"
+    - ansible_os_family not in ['FreeBSD', 'Solaris', 'Darwin']
 
 - name: Create launchctl plist file
   template:
@@ -263,13 +258,14 @@
   include_tasks: snapshot.yml
   when:
     - ansible_service_mgr == "systemd"
-    - not ansible_os_family == "FreeBSD"
-    - not ansible_os_family == "Solaris"
+    - ansible_os_family not in ['FreeBSD', 'Solaris', 'Darwin']
+    - (consul_snapshot)
+
+- name: Boostrap
+  when:
+    - not bootstrap_state.stat.exists
     - not ansible_os_family == "Darwin"
-    - consul_snapshot | bool
-
-- block:
-
+  block:
     - name: Start Consul
       service:
         name: consul
@@ -279,9 +275,9 @@
     - name: Check Consul HTTP API (via TCP socket)
       wait_for:
         delay: 15
-        port: "{{ consul_ports.http|int }}"
+        port: "{{ consul_ports.http | int }}"
         host: "{{ consul_addresses.http }}"
-      when: (consul_ports.http|int > -1) and (consul_addresses.http|ipaddr)
+      when: (consul_ports.http | int > -1) and (consul_addresses.http | ipaddr)
 
     - name: Check Consul HTTP API (via unix socket)
       wait_for:
@@ -295,12 +291,10 @@
         state: touch
         mode: 0600
 
-    - include_tasks: ../tasks/iptables.yml
-      when: consul_iptables_enable | bool
+    - name: Include iptables
+      include_tasks: ../tasks/iptables.yml
+      when: (consul_iptables_enable)
 
-  when:
-    - not bootstrap_state.stat.exists
-    - not ansible_os_family == "Darwin"
-
-- include_tasks: ../tasks/dnsmasq.yml
-  when: consul_dnsmasq_enable | bool
+- name: Include dnsmasq
+  include_tasks: ../tasks/dnsmasq.yml
+  when: (consul_dnsmasq_enable)

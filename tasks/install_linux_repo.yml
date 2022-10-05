@@ -1,6 +1,4 @@
 ---
-# File: install_linux_repo.yml - package installation tasks for Consul
-
 - name: Install OS packages
   package:
     name: "{{ consul_repo_prerequisites }}"
@@ -17,8 +15,10 @@
     manager: auto
 
 - name: Clean up previous consul data
+  when: "'consul' not in ansible_facts.packages"
+  become: true
   block:
-    - name: Stop service consul, if running
+    - name: Stop consul service
       service:
         name: consul
         state: stopped
@@ -34,16 +34,16 @@
       loop_control:
         loop_var: service_unit_item
 
-    - name: Remove the user 'consul'
+    - name: Remove the consul user
       user:
         name: consul
         state: absent
         remove: yes
 
-  when: "'consul' not in ansible_facts.packages"
-  become: true
 
-- name: Install repository
+- name: Add Consul repository
+  when: "ansible_os_family | lower in [ 'debian', 'redhat' ]"
+  become: true
   block:
     - name: Add Redhat/CentOS/Fedora/Amazon Linux repository
       command: "yum-config-manager --add-repo {{ consul_repo_url }}"
@@ -53,21 +53,18 @@
             ansible_distribution|lower == 'fedora' or ansible_distribution|lower == 'amazon' or \
             ansible_distribution|lower == 'rocky'"
 
-    - name: Add an Apt signing key, uses whichever key is at the URL
+    - name: Add an Apt signing key
       apt_key:
         url: "{{ consul_repo_url }}/gpg"
         state: present
-      when: "ansible_os_family|lower == 'debian'"
+      when: "ansible_os_family | lower == 'debian'"
 
     - name: Add Debian/Ubuntu Linux repository
       apt_repository:
         repo: "deb {{ consul_repo_url }} {{ ansible_distribution_release }} main"
         state: present
         update_cache: true
-      when: "ansible_os_family|lower == 'debian'"
-
-  when: "ansible_os_family|lower in [ 'debian', 'redhat' ]"
-  become: true
+      when: "ansible_os_family | lower == 'debian'"
 
 - name: Install consul package
   package:
@@ -75,7 +72,7 @@
     state: present
   become: true
 
-- name: Create a directory /etc/systemd/system/consul.service.d
+- name: Create systemd override directory (/etc/systemd/system/consul.service.d)
   file:
     path: /etc/systemd/system/consul.service.d
     state: directory
@@ -100,7 +97,7 @@
     - restart consul
   when:
     - ansible_service_mgr == "systemd"
-    - consul_install_from_repo | bool
+    - (consul_install_from_repo)
 
 - name: Flush handlers
   meta: flush_handlers
