@@ -1,5 +1,5 @@
 ---
-- name: restart consul on unix
+- name: Restart consul on unix
   service:
     name: consul
     state: restarted
@@ -8,12 +8,12 @@
     - ansible_os_family != "Windows"
   listen: 'restart consul'
 
-- name: restart consul on Mac
+- name: Restart consul on Mac
   include_tasks: "{{ role_path }}/handlers/restart_consul_mac.yml"
   when: ansible_os_family == "Darwin"
   listen: 'restart consul'
 
-- name: restart consul on windows
+- name: Restart consul on windows
   win_service:
     name: consul
     state: restarted
