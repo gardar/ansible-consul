@@ -2,7 +2,7 @@
 # File: config.yml - Consul configuration tasks
 
 - name: Create configuration
-  copy:
+  template:
     dest: "{{ config_item.dest }}"
     owner: "{{ consul_user }}"
     group: "{{ consul_group }}"
@@ -42,5 +42,5 @@
 
 - name: Set fact list with custom configuration file
   set_fact:
-    managed_files: "{{ managed_files |default([]) }} + \
+    managed_files: "{{ managed_files | default([]) }} + \
       [ '{{ consul_configd_path }}/50custom.json' ]"
