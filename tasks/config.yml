@@ -29,7 +29,7 @@
     - restart consul
 
 - name: Create custom configuration
-  copy:
+  template:
     dest: "{{ consul_configd_path }}/50custom.json"
     owner: "{{ consul_user }}"
     group: "{{ consul_group }}"

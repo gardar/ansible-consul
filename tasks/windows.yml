@@ -64,7 +64,7 @@
 
     # Key provided by extra vars or the above block
     - name: (Windows) Write gossip encryption key locally for use with new servers
-      copy:
+      template:
         content: "{{ consul_raw_key }}"
         dest: '/tmp/consul_raw.key'
         mode: 0700
@@ -85,7 +85,7 @@
           register: consul_keygen
 
         - name: (Windows) Write key locally to share with other nodes
-          copy:
+          template:
             content: "{{ consul_keygen.stdout }}"
             dest: '/tmp/consul_raw.key'
             mode: 0700
