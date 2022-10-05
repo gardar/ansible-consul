@@ -5,7 +5,7 @@ platforms:
       - consul_instances
     image: dokken/ubuntu-18.04
     command: /lib/systemd/systemd
-    dockerfile: ../_shared/Dockerfile.j2
+    dockerfile: ../Dockerfile.j2
     capabilities:
       - SYS_ADMIN
     volumes:

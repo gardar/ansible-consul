@@ -4,7 +4,7 @@ platforms:
     groups:
       - consul_instances
     image: dokken/oraclelinux-8
-    dockerfile: ../_shared/Dockerfile.j2
+    dockerfile: ../Dockerfile.j2
     capabilities:
       - SYS_ADMIN
     volumes:
