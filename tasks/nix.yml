@@ -93,7 +93,7 @@
 
     # Key provided by extra vars or the above block
     - name: Write gossip encryption key locally for use with new servers
-      template:
+      copy:
         content: "{{ consul_raw_key }}"
         dest: '/tmp/consul_raw.key'
         mode: 0600
@@ -120,7 +120,7 @@
           changed_when: true
 
         - name: Write key locally to share with other nodes
-          template:
+          copy:
             content: "{{ consul_keygen.stdout }}"
             dest: '/tmp/consul_raw.key'
             mode: '0644'

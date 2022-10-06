@@ -2,7 +2,7 @@
 # File: config.yml - Consul configuration tasks
 
 - name: Create configuration
-  template:
+  copy:
     dest: "{{ config_item.dest }}"
     owner: "{{ consul_user }}"
     group: "{{ consul_group }}"
@@ -29,7 +29,7 @@
     - restart consul
 
 - name: Create custom configuration
-  template:
+  copy:
     dest: "{{ consul_configd_path }}/50custom.json"
     owner: "{{ consul_user }}"
     group: "{{ consul_group }}"

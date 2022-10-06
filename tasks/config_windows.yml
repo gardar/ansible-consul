@@ -2,7 +2,7 @@
 # File: config_windows.yml - Consul configuration tasks for Windows
 
 - name: Create configuration
-  win_template:
+  win_copy:
     dest: "{{ config_item.dest }}"
     content: "{{ lookup('template', consul_config_template_path, convert_data=True) | to_nice_json }}"
   with_items:
@@ -26,7 +26,7 @@
     - restart consul
 
 - name: Create custom configuration
-  win_template:
+  win_copy:
     dest: "{{ consul_configd_path }}/50custom.json"
     content: "{{ lookup('template', 'templates/configd_50custom.json.j2', convert_data=True) | to_nice_json }}"
   when:

@@ -18,7 +18,7 @@
 
 
 - name: Write gossip encryption key locally for use with new servers
-  template:
+  copy:
     content: "{{ consul_raw_key }}"
     dest: /tmp/consul_raw.key
     mode: 0600
