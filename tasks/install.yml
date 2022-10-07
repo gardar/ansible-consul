@@ -5,6 +5,7 @@
   package:
     name: "{{ consul_os_packages }}"
     state: present
+    update_cache: true
   tags: installation
   when: not ansible_facts['os_family'] == "VMware Photon OS" and (consul_os_packages | length > 0)
 
