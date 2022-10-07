@@ -5,9 +5,5 @@ platforms:
       - consul_instances
     image: dokken/ubuntu-18.04
     command: /lib/systemd/systemd
-    dockerfile: ../Dockerfile.j2
-    capabilities:
-      - SYS_ADMIN
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     privileged: true
+    cgroup_parent: docker.slice

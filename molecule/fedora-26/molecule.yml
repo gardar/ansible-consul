@@ -4,8 +4,5 @@ platforms:
     groups:
       - consul_instances
     image: dokken/fedora-26
-    dockerfile: ../Dockerfile.j2
-    capabilities:
-      - SYS_ADMIN
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    privileged: true
+    cgroup_parent: docker.slice

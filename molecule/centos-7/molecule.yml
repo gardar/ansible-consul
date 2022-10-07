@@ -4,8 +4,7 @@ platforms:
     groups:
       - consul_instances
     image: dokken/centos-7
-    dockerfile: ../Dockerfile.j2
-    capabilities:
-      - SYS_ADMIN
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    command: /usr/lib/systemd/systemd
+    dockerfile: Dockerfile.j2
+    privileged: true
+    cgroup_parent: docker.slice
