@@ -66,7 +66,7 @@
           when: consul_config is defined
 
     # Key provided by extra vars or the above block
-    - name: (Windows) Write gossip encryption key locally for use with new servers
+    - name: (Windows) Write gossip encryption key locally for use with new servers  # noqa template-instead-of-copy  # ansible/ansible-lint/issues/2501
       win_copy:
         content: "{{ consul_raw_key }}"
         dest: '/tmp/consul_raw.key'
@@ -93,7 +93,7 @@
           win_shell: "{{ consul_binary }} keygen"
           register: consul_keygen
 
-        - name: (Windows) Write key locally to share with other nodes
+        - name: (Windows) Write key locally to share with other nodes   # noqa template-instead-of-copy  # https://github.com/ansible/ansible-lint/issues/2501
           win_copy:
             content: "{{ consul_keygen.stdout }}"
             dest: '/tmp/consul_raw.key'

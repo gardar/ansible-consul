@@ -17,7 +17,7 @@
       failed_when: false
 
 
-- name: Write gossip encryption key locally for use with new servers
+- name: Write gossip encryption key locally for use with new servers  # noqa template-instead-of-copy  # https://github.com/ansible/ansible-lint/issues/2501
   copy:
     content: "{{ consul_raw_key }}"
     dest: /tmp/consul_raw.key
