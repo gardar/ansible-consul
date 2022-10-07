@@ -4,5 +4,6 @@ platforms:
     groups:
       - consul_instances
     image: dokken/centos-stream-8
+    command: /lib/systemd/systemd
     privileged: true
     cgroup_parent: docker.slice

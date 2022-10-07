@@ -4,5 +4,6 @@ platforms:
     groups:
       - consul_instances
     image: dokken/fedora-28
+    command: /lib/systemd/systemd
     privileged: true
     cgroup_parent: docker.slice
