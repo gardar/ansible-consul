@@ -7,3 +7,9 @@ platforms:
     command: /lib/systemd/systemd
     privileged: true
     cgroup_parent: docker.slice
+
+provisioner:
+  inventory:
+    group_vars:
+      all:
+        ansible_python_interpreter: /usr/bin/python2.7
