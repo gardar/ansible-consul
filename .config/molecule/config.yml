@@ -1,6 +1,7 @@
 ---
 dependency:
-  name: galaxy
+  name: shell
+  command: "pip install molecule-docker==2.0.0"
 driver:
   name: docker
 lint: |
