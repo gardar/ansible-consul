@@ -18,7 +18,7 @@
         - name: Install netaddr dependency on controlling host
           pip:
             name: netaddr
-            become: false
+          become: false
 
 - name: Prepare host
   hosts: all
