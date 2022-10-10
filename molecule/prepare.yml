@@ -10,7 +10,9 @@
         - name: Install OS packages on controlling host
           when: ansible_distribution != 'MacOSX'
           package:
-            name: unzip
+            name:
+              - unzip
+              - rsync
           become: true
 
         - name: Install netaddr dependency on controlling host
