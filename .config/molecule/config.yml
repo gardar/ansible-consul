@@ -1,7 +1,7 @@
 ---
 dependency:
   name: shell
-  command: "pip install git+https://github.com/ansible-community/molecule-docker.git"
+  command: "pip install git+https://github.com/ansible-community/molecule-docker.git@main"
 driver:
   name: docker
 lint: |
