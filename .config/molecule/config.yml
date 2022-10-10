@@ -1,7 +1,7 @@
 ---
 dependency:
   name: shell
-  command: "pip install -I molecule-docker==2.1.0"
+  command: "pip install -I molecule-docker==2.0.0"
   #command: "pip install git+https://github.com/ansible-community/molecule-docker.git@main"
 driver:
   name: docker
