@@ -19,13 +19,3 @@
           pip:
             name: netaddr
           become: false
-
-- name: Prepare host
-  hosts: all
-
-  tasks:
-    - name: Install prerequisites
-      package:
-        name:
-          - rsync
-        state: present
