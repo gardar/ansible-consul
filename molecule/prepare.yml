@@ -12,7 +12,6 @@
           package:
             name:
               - unzip
-              - rsync
           become: true
 
         - name: Install netaddr dependency on controlling host
